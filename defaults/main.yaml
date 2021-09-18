@@ -60,7 +60,7 @@ consul_enable_debug: false
 consul_enable_syslog: true
 consul_log_level: "INFO"
 consul_node_name: "{{ inventory_hostname }}"
-consul_retry_join: true
+consul_retry_join: false
 consul_bootstrap_expect: 2
 consul_encrypt: ""
 consul_ca_file: "{{ consul_ssl_dir }}/ca.pem"
