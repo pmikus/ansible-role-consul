@@ -155,7 +155,7 @@
     name: "systemd-resolved"
     state: "{{ systemd_resolved_state }}"
   when:
-    - nomad_service_mgr == "systemd"
+    - consul_service_mgr == "systemd"
   tags:
     - consul-conf
 
@@ -170,7 +170,7 @@
     - "Restart Consul"
     - "Restart Nomad"
   when:
-    - nomad_service_mgr == "systemd"
+    - consul_service_mgr == "systemd"
   tags:
     - consul-conf
 
