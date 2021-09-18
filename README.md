@@ -21,7 +21,7 @@ None
 
     - hosts: localhost
       roles:
-        - pmikus.FIXME
+        - pmikus.consul
 
 ## License
 

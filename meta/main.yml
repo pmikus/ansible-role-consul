@@ -4,17 +4,18 @@
 dependencies: []
 
 galaxy_info:
-  role_name: FIXME
+  role_name: consul
   author: pmikus
-  description: FIXME for Linux.
+  description: Hashicorp Consul.
   company: none
   license: "license (BSD, MIT)"
   min_ansible_version: 2.9
   platforms:
     - name: Ubuntu
       versions:
-        - bionic
         - focal
         - groovy
+        - hirsute
   galaxy_tags:
-    - FIXME
+    - consul
+    - hashicorp

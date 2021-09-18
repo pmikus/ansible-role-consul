@@ -1,13 +1,177 @@
 ---
-# file: tasks/main.yaml
+# file: roles/consul/tasks/main.yaml
 
-- include_tasks: "{{ ansible_distribution|lower }}.yaml"
+- name: Install Dependencies
+  apt:
+    name: "{{ packages | flatten(levels=1) }}"
+    state: "present"
+    cache_valid_time: 3600
+    install_recommends: false
+  when:
+    - ansible_distribution|lower == 'ubuntu'
   tags:
-    - FIXME-inst-dependencies
+    - consul-inst-dependencies
 
-- name: Install FIXME.
-  package:
-    name: "{{ FIXME_package }}"
-    state: "{{ FIXME_package_state }}"
+- name: Conf - Add Consul Group
+  group:
+    name: "{{ consul_group }}"
+    state: "{{ consul_group_state }}"
   tags:
-    - FIXME-inst
+    - consul-conf-user
+
+- name: Conf - Add Consul user
+  user:
+    name: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    state: "{{ consul_user_state }}"
+    system: true
+  tags:
+    - consul-conf-user
+
+- name: Inst - Download Consul
+  get_url:
+    url: "{{ consul_zip_url }}"
+    dest: "{{ consul_inst_dir }}/{{ consul_pkg }}"
+  tags:
+    - consul-inst-package
+
+- name: Inst - Clean Consul
+  file:
+    path: "{{ consul_inst_dir }}/consul"
+    state: "absent"
+  when:
+    - consul_force_update | bool
+  tags:
+    - consul-inst-package
+
+- name: Inst - Unarchive Consul
+  unarchive:
+    src: "{{ consul_inst_dir }}/{{ consul_pkg }}"
+    dest: "{{ consul_inst_dir }}/"
+    remote_src: true
+  tags:
+    - consul-inst-package
+
+- name: Inst - Consul
+  copy:
+    src: "{{ consul_inst_dir }}/consul"
+    dest: "{{ consul_bin_dir }}"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    force: true
+    mode: 0755
+    remote_src: true
+  tags:
+    - consul-inst-package
+
+- name: Conf - Create Directories "{{ consul_data_dir }}"
+  file:
+    dest: "{{ consul_data_dir }}"
+    state: directory
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+  tags:
+    - consul-conf
+
+- name: Conf - Create Directories "{{ consul_ssl_dir }}"
+  file:
+    dest: "{{ consul_ssl_dir }}"
+    state: directory
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+  tags:
+    - consul-conf
+
+- name: Conf - Create Config Directory
+  file:
+    dest: "{{ consul_config_dir }}"
+    state: directory
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    mode: 0755
+  tags:
+    - consul-conf
+
+- name: Conf - Base Configuration
+  template:
+    src: base.hcl.j2
+    dest: "{{ consul_config_dir }}/base.hcl"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    mode: 0644
+  tags:
+    - consul-conf
+
+- name: Conf - Ports Configuration
+  template:
+    src: ports.hcl.j2
+    dest: "{{ consul_config_dir }}/ports.hcl"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    mode: 0644
+  tags:
+    - consul-conf
+
+- name: Conf - Telemetry Configuration
+  template:
+    src: telemetry.hcl.j2
+    dest: "{{ consul_config_dir }}/telemetry.hcl"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    mode: 0644
+  tags:
+    - consul-conf
+
+- name: Conf - Services Configuration
+  template:
+    src: services.json.j2
+    dest: "{{ consul_config_dir }}/services.json"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    mode: 0644
+  when:
+    - consul_services
+  tags:
+    - consul-conf
+
+- name: Conf - Copy Certificates And Keys
+  copy:
+    content: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    mode: 0600
+  no_log: true
+  loop: "{{ consul_certificates | flatten(levels=1) }}"
+  when:
+    - consul_certificates is defined
+  tags:
+    - consul-conf
+
+- name: Conf - Stop Systemd-resolved
+  systemd:
+    daemon_reload: true
+    enabled: false
+    name: "systemd-resolved"
+    state: "{{ systemd_resolved_state }}"
+  when:
+    - nomad_service_mgr == "systemd"
+  tags:
+    - consul-conf
+
+- name: Conf - System.d Script
+  template:
+    src: "consul_systemd.service.j2"
+    dest: "/lib/systemd/system/consul.service"
+    owner: "root"
+    group: "root"
+    mode: 0644
+  notify:
+    - "Restart Consul"
+    - "Restart Nomad"
+  when:
+    - nomad_service_mgr == "systemd"
+  tags:
+    - consul-conf
+
+- meta: flush_handlers
