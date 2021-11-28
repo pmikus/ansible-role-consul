@@ -1,14 +1,22 @@
 ---
 # file: roles/consul/tasks/main.yaml
 
-- name: Install Dependencies
+- name: Inst - Update Repositories Cache
+  apt:
+    update_cache: true
+  when:
+    - ansible_os_family == 'Debian'
+  tags:
+   - consul-inst-package
+
+- name: Inst - Dependencies
   apt:
     name: "{{ packages | flatten(levels=1) }}"
     state: "present"
     cache_valid_time: 3600
     install_recommends: false
   when:
-    - ansible_distribution|lower == 'ubuntu'
+    - ansible_os_family == 'Debian'
   tags:
     - consul-inst-dependencies
 
@@ -174,4 +182,5 @@
   tags:
     - consul-conf
 
-- meta: flush_handlers
+- name: Meta - Flush handlers
+  meta: flush_handlers
