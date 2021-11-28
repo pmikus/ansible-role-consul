@@ -7,7 +7,7 @@
   when:
     - ansible_os_family == 'Debian'
   tags:
-   - consul-inst-package
+    - consul-inst-package
 
 - name: Inst - Dependencies
   apt:
