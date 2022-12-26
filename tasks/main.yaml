@@ -1,8 +1,8 @@
 ---
-# file: roles/consul/tasks/main.yaml
+# file: tasks/main.yaml
 
 - name: Inst - Update Repositories Cache
-  apt:
+  ansible.builtin.apt:
     update_cache: true
   when:
     - ansible_os_family == 'Debian'
@@ -10,7 +10,7 @@
     - consul-inst-package
 
 - name: Inst - Dependencies
-  apt:
+  ansible.builtin.apt:
     name: "{{ packages | flatten(levels=1) }}"
     state: "present"
     cache_valid_time: 3600
@@ -21,14 +21,14 @@
     - consul-inst-dependencies
 
 - name: Conf - Add Consul Group
-  group:
+  ansible.builtin.group:
     name: "{{ consul_group }}"
     state: "{{ consul_group_state }}"
   tags:
     - consul-conf-user
 
 - name: Conf - Add Consul user
-  user:
+  ansible.builtin.user:
     name: "{{ consul_user }}"
     group: "{{ consul_group }}"
     state: "{{ consul_user_state }}"
@@ -37,14 +37,14 @@
     - consul-conf-user
 
 - name: Inst - Download Consul
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ consul_zip_url }}"
     dest: "{{ consul_inst_dir }}/{{ consul_pkg }}"
   tags:
     - consul-inst-package
 
 - name: Inst - Clean Consul
-  file:
+  ansible.builtin.file:
     path: "{{ consul_inst_dir }}/consul"
     state: "absent"
   when:
@@ -53,7 +53,7 @@
     - consul-inst-package
 
 - name: Inst - Unarchive Consul
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ consul_inst_dir }}/{{ consul_pkg }}"
     dest: "{{ consul_inst_dir }}/"
     remote_src: true
@@ -61,7 +61,7 @@
     - consul-inst-package
 
 - name: Inst - Consul
-  copy:
+  ansible.builtin.copy:
     src: "{{ consul_inst_dir }}/consul"
     dest: "{{ consul_bin_dir }}"
     owner: "{{ consul_user }}"
@@ -73,27 +73,27 @@
     - consul-inst-package
 
 - name: Conf - Create Directories "{{ consul_data_dir }}"
-  file:
+  ansible.builtin.file:
     dest: "{{ consul_data_dir }}"
-    state: directory
+    state: "directory"
     owner: "{{ consul_user }}"
     group: "{{ consul_group }}"
   tags:
     - consul-conf
 
 - name: Conf - Create Directories "{{ consul_ssl_dir }}"
-  file:
+  ansible.builtin.file:
     dest: "{{ consul_ssl_dir }}"
-    state: directory
+    state: "directory"
     owner: "{{ consul_user }}"
     group: "{{ consul_group }}"
   tags:
     - consul-conf
 
 - name: Conf - Create Config Directory
-  file:
+  ansible.builtin.file:
     dest: "{{ consul_config_dir }}"
-    state: directory
+    state: "directory"
     owner: "{{ consul_user }}"
     group: "{{ consul_group }}"
     mode: 0755
@@ -101,8 +101,8 @@
     - consul-conf
 
 - name: Conf - Base Configuration
-  template:
-    src: base.hcl.j2
+  ansible.builtin.template:
+    src: "base.hcl.j2"
     dest: "{{ consul_config_dir }}/base.hcl"
     owner: "{{ consul_user }}"
     group: "{{ consul_group }}"
@@ -111,8 +111,8 @@
     - consul-conf
 
 - name: Conf - Ports Configuration
-  template:
-    src: ports.hcl.j2
+  ansible.builtin.template:
+    src: "ports.hcl.j2"
     dest: "{{ consul_config_dir }}/ports.hcl"
     owner: "{{ consul_user }}"
     group: "{{ consul_group }}"
@@ -121,8 +121,8 @@
     - consul-conf
 
 - name: Conf - Telemetry Configuration
-  template:
-    src: telemetry.hcl.j2
+  ansible.builtin.template:
+    src: "telemetry.hcl.j2"
     dest: "{{ consul_config_dir }}/telemetry.hcl"
     owner: "{{ consul_user }}"
     group: "{{ consul_group }}"
@@ -131,8 +131,8 @@
     - consul-conf
 
 - name: Conf - Services Configuration
-  template:
-    src: services.json.j2
+  ansible.builtin.template:
+    src: "services.json.j2"
     dest: "{{ consul_config_dir }}/services.json"
     owner: "{{ consul_user }}"
     group: "{{ consul_group }}"
@@ -143,7 +143,7 @@
     - consul-conf
 
 - name: Conf - Copy Certificates And Keys
-  copy:
+  ansible.builtin.copy:
     content: "{{ item.src }}"
     dest: "{{ item.dest }}"
     owner: "{{ consul_user }}"
@@ -157,7 +157,7 @@
     - consul-conf
 
 - name: Conf - Stop Systemd-resolved
-  systemd:
+  ansible.builtin.systemd:
     daemon_reload: true
     enabled: false
     name: "systemd-resolved"
@@ -168,7 +168,7 @@
     - consul-conf
 
 - name: Conf - System.d Script
-  template:
+  ansible.builtin.template:
     src: "consul_systemd.service.j2"
     dest: "/lib/systemd/system/consul.service"
     owner: "root"
@@ -183,4 +183,4 @@
     - consul-conf
 
 - name: Meta - Flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
