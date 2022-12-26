@@ -72,7 +72,7 @@
   tags:
     - consul-inst-package
 
-- name: Conf - Create Directories "{{ consul_data_dir }}"
+- name: Conf - Create Directories
   ansible.builtin.file:
     dest: "{{ consul_data_dir }}"
     state: "directory"
@@ -81,7 +81,7 @@
   tags:
     - consul-conf
 
-- name: Conf - Create Directories "{{ consul_ssl_dir }}"
+- name: Conf - Create Directories
   ansible.builtin.file:
     dest: "{{ consul_ssl_dir }}"
     state: "directory"
